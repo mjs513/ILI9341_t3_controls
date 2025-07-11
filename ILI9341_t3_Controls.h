@@ -54,8 +54,20 @@ rev		date			author				change
 #include "Arduino.h"
 #endif
 
-#include <ILI9341_t3.h>   
-
+#if __has_include("ILI9341_t3.h")
+#include <ILI9341_t3.h>
+#elif __has_include("NT35510_t4x_p.h")
+#include <Teensy_Parallel_GFX.h>
+#include <NT35510_t4x_p.h>
+#define ILI9341_t3 NT35510_t4x_p
+#elif __has_include("RA8876_t41_p.h")
+#include <RA8876_common.h>
+#include <RA8876_t41_p.h>
+#define ILI9341_t3 RA8876_t41_p
+#elif __has_include("ST7796_t3.h")
+#include <ST7796_t3.h>
+#define ILI9341_t3 ST7796_t3
+#endif
 
 #define G_REPAINT 0
 #define G_DRAWOVER 1
@@ -883,7 +895,15 @@ public:
 			d->setFont(f);
 
 			if ((x_offset == 0) && (y_offset == 0)){
+        #if __has_include("RA8876_t41_p.h")
+        uint16_t _txtWidth = d->getFontWidth() * strlen(label);
+				d->setCursor(x - _txtWidth, y - (_txtWidth/2));
+        #elif __has_include("ST7796_t3.h")
+        uint16_t _txtWidth = d->strPixelLen(label);
+        d->setCursor(x - _txtWidth, y - (_txtWidth/2));
+        #else
 				d->setCursor(x - (d->measureTextWidth(label)/2), y - (d->measureTextHeight(label)/2));
+        #endif
 			}
 			else {
 				d->setCursor(x + x_offset , y + y_offset);
@@ -1174,8 +1194,16 @@ public:
 		d->setTextColor(tcolor);
 		
 		if (toy == 0) {
+      #if __has_include("RA8876_t41_p.h")
+      uint16_t _txtWidth = d->getFontWidth() * strlen(label);
+			d->setCursor(x + tox+(s/2), y - (s/2)- (_txtWidth/2));
+      #elif __has_include("ST7796_t3.h")
+      uint16_t _txtWidth = d->strPixelLen(label);
+      d->setCursor(x + tox+(s/2), y - (s/2)- (_txtWidth/2));
+      #else
 			d->setCursor(x + tox+(s/2), y - (s/2)- (d->measureTextHeight(label)/2));
-		}
+      #endif
+    }
 		else {
 			d->setCursor(x + tox+(s/2), y - s + toy);
 		}

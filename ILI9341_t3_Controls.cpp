@@ -25,7 +25,21 @@
 
 
 #include "ILI9341_t3_Controls.h"
-#include <ILI9341_t3.h>     // fast display driver lib
+#if __has_include("ILI9341_t3.h")
+#include <ILI9341_t3.h>
+#elif __has_include("NT35510_t4x_p.h")
+#include <Teensy_Parallel_GFX.h>
+#include <NT35510_t4x_p.h>
+#define ILI9341_t3 NT35510_t4x_p
+#elif __has_include("RA8876_t41_p.h")
+#include <RA8876_common.h>
+#include <RA8876_t41_p.h>
+#define ILI9341_t3 RA8876_t41_p
+#elif __has_include("ST7796_t3.h")
+#include <ST7796_t3.h>
+#define ILI9341_t3 ST7796_t3
+#endif
+
 
 float degtorad = .0174532778;
 
@@ -37,6 +51,7 @@ arc shaped bar chart
 
 
 *///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 BarChartA::BarChartA(ILI9341_t3 *Display){
 
@@ -913,9 +928,15 @@ void CGraph::drawGraph() {
 
 		if (sxs){
 			dtostrf((XLow+(XInc*j)) * XTextScale, 0, XDec,text);
-			
+          #if __has_include("RA8876_t41_p.h")
+          uint16_t _txtWidth = d->getFontWidth() * strlen(text);
+          d->setCursor(gx + 10 + (j * xlen) - _txtWidth, gy+XScaleOffset);
+          #elif __has_include("ST7796_t3.h")
+          uint16_t _txtWidth = d->strPixelLen(text);
+          d->setCursor(gx + 10 + (j * xlen) - _txtWidth, gy+XScaleOffset);
+          #else      
 			d->setCursor(gx + (j * xlen)- (d->measureTextWidth(text)/2), gy+XScaleOffset);
-			
+			#endif
 			d->print(text);
 			
 		}
@@ -940,8 +961,15 @@ void CGraph::drawGraph() {
 		if (sys){
 			
 			dtostrf(YLow+(YInc*i), 0, YDec,text);
+          #if __has_include("RA8876_t41_p.h")
+          uint16_t _txtWidth = d->getFontWidth() * strlen(text);
+          d->setCursor(gx-YScaleOffset, gy - (ylen * i)-(_txtWidth/2));
+          #elif __has_include("ST7796_t3.h")
+          uint16_t _txtWidth = d->strPixelLen(text);
+          d->setCursor(gx-YScaleOffset, gy - (ylen * i)-(_txtWidth/2));
+          #else
 			d->setCursor(gx-YScaleOffset, gy - (ylen * i)-(d->measureTextHeight(text)/2));
-			
+			#endif
 			//d->setCursor(gx + (j * xlen)- (d->measureTextWidth(text)/2), gy+XScaleOffset);
 			
 			
@@ -987,9 +1015,15 @@ void CGraph::drawGraph() {
 	if (sl) {
 		// draw legend
 		StartPointX = gx-20;
-		
+    	#if __has_include("RA8876_t41_p.h")
+        uint16_t _txtWidth = d->getFontWidth() * strlen(xatitle);
+    		StartPointX = gx + _txtWidth + 10;
+        #elif __has_include("ST7796_t3.h")
+        uint16_t _txtWidth = d->strPixelLen(xatitle);
+    		StartPointX = gx + _txtWidth + 10;
+        #else
 		StartPointX = gx + d->measureTextWidth(xatitle) + 10;
-			
+		#endif
 		if (tl == LOCATION_TOP){
 			StartPointY = gy - gh;
 		}
@@ -2240,11 +2274,16 @@ bool SliderOnOff::slide(float ScreenX, float ScreenY){
 void  SliderOnOff::draw(bool state) {
 
 	_pos = state;
-
+  
+  #if __has_include("RA8876_t41_p.h")
+  _d->fillRoundRect(_l, _t, _w, _h, _h / 2, _h / 2, _bColor);
+  _d->drawRoundRect(_l, _t, _w, _h, _h / 2,  _h / 2,_sColor);
+  _d->drawRoundRect(_l + 1, _t + 1, _w - 2, _h, _h / 2, _h / 2, _sColor);
+  #else
 	_d->fillRoundRect(_l, _t, _w, _h, _h / 2, _bColor);
 	_d->drawRoundRect(_l, _t, _w, _h, _h / 2, _sColor);
 	_d->drawRoundRect(_l + 1, _t + 1, _w - 2, _h, _h / 2, _sColor);
-	
+	#endif
 
 	if (state) {
 		// draw on button
